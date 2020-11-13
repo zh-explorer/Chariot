@@ -18,6 +18,7 @@ class Team(Base):
     name = sqlalchemy.Column(sqlalchemy.String(256), unique=True)
     comment = sqlalchemy.Column(sqlalchemy.String(256))
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=10)
+    active = sqlalchemy.Column(sqlalchemy.Boolean, default=True)
 
 
 class Challenge(Base):
@@ -26,17 +27,21 @@ class Challenge(Base):
     name = sqlalchemy.Column(sqlalchemy.String(256), unique=True)
     challenge_type = sqlalchemy.Column(sqlalchemy.Enum(ChallengeType), default=ChallengeType.unknown)
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=10)
+    active = sqlalchemy.Column(sqlalchemy.Boolean, default=True)
 
 
 class ChallengeInst(Base):
     __tablename__ = "challenge_inst"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    challenge_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("challenge.id"))
+    challenge_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("challenge.id", ondelete="CASCADE"))
     challenge = sqlalchemy.orm.relationship("Challenge", backref="challenge_inst")
 
-    team_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("Team.id"))
+    team_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("team.id", ondelete="CASCADE"))
     team = sqlalchemy.orm.relationship("Team", backref="challenge_inst")
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=100)
+
+    address = sqlalchemy.Column(sqlalchemy.String(256))
+    port = sqlalchemy.Column(sqlalchemy.Integer)
 
 
 class FlagStatus(enum.Enum):
@@ -52,7 +57,7 @@ class Flag(Base):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     flag_data = sqlalchemy.Column(sqlalchemy.String(256))
     timestamp = sqlalchemy.Column(sqlalchemy.Integer)
-    inst = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("ChallengeInst.id"))
+    inst = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("challenge_inst.id", ondelete="SET NULL"))
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=100)
     submit_status = sqlalchemy.Column(sqlalchemy.Enum(FlagStatus), default=FlagStatus.wait_submit)
 
@@ -62,6 +67,13 @@ class Database(object):
         self.engine = sqlalchemy.create_engine(db)
         Base.metadata.create_all(self.engine)
         self.session_maker = sessionmaker(bind=self.engine)
+
+        session = self.session_maker()
+        session.query(ChallengeInst).delete()
+        session.query(Team).delete()
+        session.query(Challenge).delete()
+        session.commit()
+        session.close()
 
     def get_session(self):
         return self.session_maker()

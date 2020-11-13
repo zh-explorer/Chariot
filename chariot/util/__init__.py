@@ -1,2 +1,3 @@
 from .context import Context
-from .log import set_log_file, set_log_level
+from .log import log_reinit
+from .dict_wrapper import DictWrapper

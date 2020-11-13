@@ -2,8 +2,11 @@ from logging import Logger
 
 
 class Context:
-    timeout = None
-    log_file = None
-    log_level = None
+    log_file: str = None
+    log_level: str = None
     logger: Logger = None
     conf = None
+    round_time: int = None
+    teams = []
+    challenges = []
+    db = None

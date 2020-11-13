@@ -40,16 +40,5 @@ logger = Logger()
 logger.log_init()
 
 
-def set_log_level(level):
-    assert level in LEVELS
-    Context.log_level = level
-    log_reinit()
-
-
-def set_log_file(file_path):
-    Context.log_file = file_path
-    log_reinit()
-
-
 def log_reinit():
     logger.log_reinit(Context.log_level, Context.log_file)
