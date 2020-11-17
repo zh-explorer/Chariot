@@ -1,7 +1,9 @@
 import json
 import yaml
 import jsonschema
+import os
 from functools import partial
+import re
 from ..util import Context, DictWrapper, log_reinit
 from .config_schema import schema as schema_data
 
@@ -26,7 +28,7 @@ class Challenge:
     def __init__(self, conf):
         if isinstance(conf, DictWrapper):
             self.name = conf.name
-            self.weight = conf.weigth
+            self.weight = conf.weight
             self.active = conf.active
             self.type = conf.type
             self.port = conf.port
@@ -34,6 +36,7 @@ class Challenge:
             # we do not deal with this ip here, this will be do when db init
             self.ip_range = conf.ip_range
             self.ip_mask = conf.ip_mask
+            self.flag_path = conf.flag_path
         else:
             self.name = conf
             self.weight = 10
@@ -42,6 +45,7 @@ class Challenge:
             self.port = None
             self.ip_range = None
             self.ip_mask = None
+            self.flag_path = "flag"
 
 
 def extend_with_default(validator_class):
@@ -86,13 +90,20 @@ def load_conf(conf):
     conf = DictWrapper(conf)
     Context.conf = conf
 
-    if "log_file" in conf:
-        Context.log_file = conf.log_file
+    if "log_path" in conf:
+        Context.log_path = conf.log_path
+        # make log dir
+        os.makedirs(Context.log_path, exist_ok=True)
+
     Context.log_level = conf.log_level
     log_reinit()
     # init log when get log config from config file
 
-    Context.round_time = conf.rount_time
+    Context.max_workers = conf.max_workers
+
+    Context.round_time = conf.round_time
+    # we need a byte pattern
+    Context.flag_pattern = re.compile(conf.flag_pattern.encode(), re.M)
 
     for team in conf.teams:
         Context.teams.append(Team(team))

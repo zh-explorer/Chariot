@@ -4,7 +4,12 @@ schema = {
         "database",
         "round_time",
         "teams",
-        "challenges"
+        "challenges",
+        "log_path"
+    ],
+    "oneof": [
+        {"required": ["ip_range"]},
+        {"required": ["addr_map"]}
     ],
     "title": "config",
     "type": "object",
@@ -17,6 +22,11 @@ schema = {
             "title": "Database address",
             "type": "string"
         },
+        "max_workers": {
+            "$id": "#/properties/max_workers",
+            "title": "The workers count",
+            "type": "integer"
+        },
         "log_level": {
             "$id": "#/properties/log_level",
             "default": "INFO",
@@ -25,15 +35,18 @@ schema = {
             "title": "Log level",
             "type": "string"
         },
-        "log_file": {
-            "$id": "#/properties/log_file",
+        "log_path": {
+            "$id": "#/properties/log_path",
             "type": "string",
-            "title": "The log_file schema",
+            "default": "/tmp/chariot",
+            "title": "The log_path schema",
             "description": "An explanation about the purpose of this instance.",
-            "default": "",
-            "examples": [
-                "/tmp/flag_log"
-            ]
+        },
+        "flag_pattern": {
+            "$id": "#/properties/flag_pattern",
+            "description": "the pattern to search flag",
+            "title": "The flag_pattern schema",
+            "type": "string"
         },
         "round_time": {
             "$id": "#/properties/round_time",
@@ -177,7 +190,7 @@ schema = {
                 },
                 "type": {
                     "$id": "#/properties/challenge/items/anyOf/1/properties/type",
-                    "default": "unknow",
+                    "default": "unknown",
                     "title": "The type schema",
                     "pattern": "(unknown|web|pwn)",
                     "type": "string"
@@ -193,6 +206,12 @@ schema = {
                     "$id": "#/properties/challenge/items/anyOf/1/properties/ip_range",
                     "description": "the first ip of range used to map range to teams",
                     "title": "The ip_range schema",
+                    "type": "string"
+                },
+                "flag_path": {
+                    "$id": "#/properties/challenge/items/anyOf/1/properties/flag_path",
+                    "title": "The flag_path schema",
+                    "default": "flag",
                     "type": "string"
                 },
                 "ip_mask": {

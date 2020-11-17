@@ -28,15 +28,18 @@ class Challenge(Base):
     challenge_type = sqlalchemy.Column(sqlalchemy.Enum(ChallengeType), default=ChallengeType.unknown)
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=10)
     active = sqlalchemy.Column(sqlalchemy.Boolean, default=True)
+    flag_path = sqlalchemy.Column(sqlalchemy.String(256), default="flag")
 
 
 class ChallengeInst(Base):
     __tablename__ = "challenge_inst"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    challenge_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("challenge.id", ondelete="CASCADE"))
+    challenge_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                     sqlalchemy.ForeignKey("challenge.id", ondelete="CASCADE", onupdate="CASCADE"))
     challenge = sqlalchemy.orm.relationship("Challenge", backref="challenge_inst")
 
-    team_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("team.id", ondelete="CASCADE"))
+    team_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                sqlalchemy.ForeignKey("team.id", ondelete="CASCADE", onupdate="CASCADE"))
     team = sqlalchemy.orm.relationship("Team", backref="challenge_inst")
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=100)
 
@@ -57,9 +60,37 @@ class Flag(Base):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     flag_data = sqlalchemy.Column(sqlalchemy.String(256))
     timestamp = sqlalchemy.Column(sqlalchemy.Integer)
-    inst = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("challenge_inst.id", ondelete="SET NULL"))
+    inst_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                sqlalchemy.ForeignKey("challenge_inst.id", ondelete="SET NULL", onupdate="CASCADE"))
+    inst = sqlalchemy.orm.relationship("ChallengeInst", backref="flag")
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=100)
     submit_status = sqlalchemy.Column(sqlalchemy.Enum(FlagStatus), default=FlagStatus.wait_submit)
+
+
+class ExpStatus(enum.Enum):
+    process = 1
+    attack_failed = 2
+    flag_submitting = 3
+    success = 4
+
+
+class ExpLog(Base):
+    __tablename__ = "exp_log"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    timestamp = sqlalchemy.Column(sqlalchemy.Integer)
+    inst_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                sqlalchemy.ForeignKey("challenge_inst.id", ondelete="SET NULL", onupdate="CASCADE"))
+    inst = sqlalchemy.orm.relationship("ChallengeInst", backref='exp_log')
+
+    flag_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                sqlalchemy.ForeignKey("flag.id", ondelete="SET NULL", onupdate="CASCADE"))
+    flag = sqlalchemy.orm.relationship("Flag", backref="exp_log")
+
+    log_path = sqlalchemy.Column(sqlalchemy.String(256))
+
+    exp_name = sqlalchemy.Column(sqlalchemy.String(256))
+
+    status = sqlalchemy.Column(sqlalchemy.Enum(ExpStatus), default=ExpStatus.process)
 
 
 class Database(object):
@@ -68,12 +99,13 @@ class Database(object):
         Base.metadata.create_all(self.engine)
         self.session_maker = sessionmaker(bind=self.engine)
 
-        session = self.session_maker()
-        session.query(ChallengeInst).delete()
-        session.query(Team).delete()
-        session.query(Challenge).delete()
-        session.commit()
-        session.close()
+        # move this to build_database
+        # session = self.session_maker()
+        # session.query(ChallengeInst).delete()
+        # session.query(Team).delete()
+        # session.query(Challenge).delete()
+        # session.commit()
+        # session.close()
 
     def get_session(self):
         return self.session_maker()

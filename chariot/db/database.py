@@ -7,30 +7,84 @@ import socket
 
 
 def update_teams(session, teams):
-    i = 1
+    name_set = set()
     for team in teams:
-        t = Team()
-        t.id = i
-        i += 1
+        name_set.add(team.name)
+    if len(teams) != len(name_set):
+        Context.logger.error("Team name should not duplicate")
+        assert len(teams) == len(name_set)
+
+    db_name_set = set()
+    for team in session.query(Team).all():
+        db_name_set.add(team.name)
+
+    # del
+    del_set = db_name_set.difference(name_set)
+    if del_set:
+        session.query(Team).filter(Team.name.in_(del_set)).delete(synchronize_session=False)
+    session.commit()
+
+    for team in teams:
+        t = session.query(Team).filter(Team.name == team.name).first()
+        if t is None:
+            t = Team()
+            session.add(t)
         t.name = team.name
         t.comment = team.comment
         t.weight = team.weight
         t.active = team.active
-        session.add(t)
+    session.commit()
+    # change the order of team id
+    team_count = len(db_name_set) + len(name_set)
+    for team in session.query(Team).all():
+        team.id += team_count
+    session.commit()
+    i = 0
+    for team in teams:
+        session.query(Team).filter(Team.name == team.name).one().id = i
+        i += 1
+
     session.commit()
 
 
 def update_challenges(session, challenges):
-    i = 1
+    name_set = set()
     for challenge in challenges:
-        t = Challenge()
-        t.id = i
-        i += 1
+        name_set.add(challenge.name)
+    if len(challenges) != len(name_set):
+        Context.logger.error("challenge name should not duplicate")
+        assert len(challenges) == len(name_set)
+
+    db_name_set = set()
+    for challenge in session.query(Challenge).all():
+        db_name_set.add(challenge.name)
+
+    # del
+    del_set = db_name_set.difference(name_set)
+    if del_set:
+        session.query(Challenge).filter(Challenge.name.in_(del_set)).delete(synchronize_session=False)
+    session.commit()
+
+    for challenge in challenges:
+        t = session.query(Challenge).filter(Challenge.name == challenge.name).first()
+        if t is None:
+            t = Challenge()
+            session.add(t)
         t.name = challenge.name
         t.weight = challenge.weight
         t.active = challenge.active
         t.challenge_type = ChallengeType[challenge.type]
-        session.add(t)
+        t.flag_path = challenge.flag_path
+    session.commit()
+    # change the order of challenge id
+    challenge_count = len(db_name_set) + len(name_set)
+    for challenge in session.query(Challenge).all():
+        challenge.id += challenge_count
+    session.commit()
+    i = 0
+    for challenge in challenges:
+        session.query(Challenge).filter(Challenge.name == challenge.name).one().id = i
+        i += 1
     session.commit()
 
 
@@ -64,13 +118,16 @@ def build_database():
                     Context.logger.warning(
                         "Find a challenge in addr map but not in challenge list, something maybe wrong")
                     continue
-                challenge_inst = ChallengeInst()
+                challenge_inst = session.query(ChallengeInst).filter(ChallengeInst.team_id == t.id,
+                                                                     ChallengeInst.challenge_id == c.id).first()
+                if challenge_inst is None:
+                    challenge_inst = ChallengeInst()
+                    session.add(challenge_inst)
                 challenge_inst.challenge_id = c.id
                 challenge_inst.team_id = t.id
                 challenge_inst.weight = t.weight * c.weight
                 challenge_inst.address = m.ip
                 challenge_inst.port = m.port
-                session.add(challenge_inst)
         except sql_exc.MultipleResultsFound as e:
             Context.logger.critical("This bug should not happen")
             raise e
@@ -95,19 +152,24 @@ def build_database():
     # if address map is not define, try build challenge inst by ip range
     else:
         # ip_range in global has lowest level
+        # this should always be true
+        assert "ip_range" in conf
         if "ip_range" in conf:
             ip = conf.ip_range
             mask = conf.ip_mask
             for t in session.query(Team).all():
                 for c in Context.challenges:
                     db_c = session.query(Challenge).filter(Challenge.name == c.name).one()  # should not error
-                    inst = ChallengeInst()
+                    inst = session.query(ChallengeInst).filter(ChallengeInst.team_id == t.id,
+                                                               ChallengeInst.challenge_id == db_c.id).first()
+                    if inst is None:
+                        inst = ChallengeInst()
+                        session.add(inst)
                     inst.challenge_id = db_c.id
                     inst.team_id = t.id
                     inst.weight = t.weight * db_c.weight
                     inst.address = ip
                     inst.port = c.port
-                    session.add(inst)
                 ip = ip_inc(ip, mask)
         session.commit()
         # overwrite ip in team
@@ -122,7 +184,8 @@ def build_database():
                 ip = challenge.ip_range
                 mask = challenge.ip_mask
                 c = session.query(Challenge).filter(Challenge.name == challenge.name).one()
-                for inst in session.query(ChallengeInst).filter(ChallengeInst.challenge_id == c.id).order_by(ChallengeInst.team_id):
+                for inst in session.query(ChallengeInst).filter(ChallengeInst.challenge_id == c.id).order_by(
+                        ChallengeInst.team_id):
                     inst.address = ip
                     ip = ip_inc(ip, mask)
         session.commit()
