@@ -5,7 +5,8 @@ schema = {
         "round_time",
         "teams",
         "challenges",
-        "log_path"
+        "log_path",
+        "exp_path"
     ],
     "oneof": [
         {"required": ["ip_range"]},
@@ -40,7 +41,13 @@ schema = {
             "type": "string",
             "default": "/tmp/chariot",
             "title": "The log_path schema",
-            "description": "An explanation about the purpose of this instance.",
+        },
+        "exp_path": {
+            "$id": "#/properties/exp_path",
+            "type": "string",
+            "default": "./exp",
+            "title": "The exp_path schema",
+            "description": "The path store exp",
         },
         "flag_pattern": {
             "$id": "#/properties/flag_pattern",
@@ -52,6 +59,11 @@ schema = {
             "$id": "#/properties/round_time",
             "title": "The round time",
             "type": "integer"
+        },
+        "start_time": {
+            "$id": "#/properties/start_time",
+            "title": "The start_time schema",
+            "type": "string"
         },
         "ip_range": {
             "$id": "#/properties/ip_range",

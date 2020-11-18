@@ -41,7 +41,6 @@ logger = Logger()
 logger.log_init()
 
 
-# TODO: build log dir
 def log_reinit():
     log_file = os.path.join(Context.log_path, "main.log")
     logger.log_reinit(Context.log_level, log_file)

@@ -1,7 +1,7 @@
 import json
 import yaml
 import jsonschema
-import os
+import os, time, datetime
 from functools import partial
 import re
 from ..util import Context, DictWrapper, log_reinit
@@ -90,16 +90,22 @@ def load_conf(conf):
     conf = DictWrapper(conf)
     Context.conf = conf
 
-    if "log_path" in conf:
-        Context.log_path = conf.log_path
-        # make log dir
-        os.makedirs(Context.log_path, exist_ok=True)
+    Context.log_path = conf.log_path
+    # make log dir
+    os.makedirs(Context.log_path, exist_ok=True)
+
+    Context.exp_path = conf.exp_path
+    os.makedirs(Context.exp_path, exist_ok=True)
 
     Context.log_level = conf.log_level
     log_reinit()
     # init log when get log config from config file
 
     Context.max_workers = conf.max_workers
+
+    start_time = conf.start_time
+    start_time_ary = time.strptime(start_time, "%Y/%m/%d %H:%M")
+    Context.start_time = int(time.mktime(start_time_ary))
 
     Context.round_time = conf.round_time
     # we need a byte pattern

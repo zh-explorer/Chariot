@@ -105,6 +105,9 @@ class ExpRunner(object):
         env["FLAG_PATH"] = self.flag_path
         env["FLAG_PATTERN"] = Context.flag_pattern.pattern.decode()
 
+        # TODO: move this to a better place
+        env['PYTHONPATH'] = "/tmp/pwntools"
+
         # TODO: we should change cwd to tmp to avoid some error or should set this as a config?
         cwd = os.path.dirname(self.file_path)
         try:
