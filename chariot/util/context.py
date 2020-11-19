@@ -14,11 +14,20 @@ class Context:
     challenges = []
     flag_pattern = None
     max_workers = None
+    max_submitters = None
     start_time = None
 
     # init when start
     db = None
     exec_pool = None
+    submit_pool = None
     watcher = None
     alarm = None
     cv = None
+
+    @staticmethod
+    def notify_main_thread():
+        if not Context.cv:
+            raise RuntimeError("The main thread is not init")
+        with Context.cv:
+            Context.cv.notify()

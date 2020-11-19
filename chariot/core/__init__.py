@@ -1,1 +1,1 @@
-from .file_watcher import watcher_start, watcher_stop
+from .main import testfunc

@@ -23,6 +23,7 @@ class FileWatch(FileSystemEventHandler):
                     if os.path.basename(file_path)[:3] == "exp":
                         self.notify_queue.put(file_path)
                 self.snapshot = s
+                Context.notify_main_thread()
 
 
 class Watcher(object):

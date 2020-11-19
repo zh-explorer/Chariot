@@ -36,12 +36,13 @@ class AlarmClock(object):
 
     def alarm(self):
         self.event.set()
+        Context.notify_main_thread()
 
     def stop(self):
         self.scheduler.shutdown()
 
 
-def start_alarm(event):
+def alarm_start(event):
     if Context.alarm:
         Context.alarm.stop()
         Context.alarm = None
@@ -49,7 +50,7 @@ def start_alarm(event):
     Context.alarm = AlarmClock(event)
 
 
-def stop_alarm():
+def alarm_stop():
     if Context.alarm:
         Context.alarm.stop()
         Context.alarm = None

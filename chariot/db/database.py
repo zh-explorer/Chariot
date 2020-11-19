@@ -1,4 +1,4 @@
-from .. import Context
+from ..util import Context
 from .metadata import Database, Team, Challenge, ChallengeType, ChallengeInst
 import sqlalchemy
 from sqlalchemy.orm import exc as sql_exc

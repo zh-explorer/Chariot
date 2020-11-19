@@ -28,6 +28,11 @@ schema = {
             "title": "The workers count",
             "type": "integer"
         },
+        "max_submitters": {
+            "$id": "#/properties/max_submitters",
+            "title": "The submitters count",
+            "type": "integer"
+        },
         "log_level": {
             "$id": "#/properties/log_level",
             "default": "INFO",
@@ -270,4 +275,36 @@ schema = {
             }
         }
     }
+}
+exp_schema = {
+    "required": [
+        "path"
+    ],
+    "type": "object",
+    "properties": {
+        "path": {
+            "$id": "#/items/anyOf/0/properties/path",
+            "title": "The path schema",
+            "type": "string"
+        },
+        "retry": {
+            "$id": "#/items/anyOf/0/properties/retry",
+            "default": 3,
+            "title": "The retry schema",
+            "type": "integer"
+        },
+        "timeout": {
+            "$id": "#/items/anyOf/0/properties/timeout",
+            "default": 30,
+            "title": "The timeout schema",
+            "type": "integer"
+        },
+        "weight": {
+            "$id": "#/items/anyOf/0/properties/weight",
+            "default": 10,
+            "title": "The weight schema",
+            "type": "integer"
+        }
+    },
+    "additionalProperties": True
 }

@@ -53,6 +53,7 @@ class FlagStatus(enum.Enum):
     flag_error = 2
     flag_expire = 3
     flag_duplicate = 4
+    internal_error = 5
 
 
 class Flag(Base):
@@ -65,6 +66,7 @@ class Flag(Base):
     inst = sqlalchemy.orm.relationship("ChallengeInst", backref="flag")
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=100)
     submit_status = sqlalchemy.Column(sqlalchemy.Enum(FlagStatus), default=FlagStatus.wait_submit)
+    comment = sqlalchemy.Column(sqlalchemy.String(256))
 
 
 class ExpStatus(enum.Enum):
@@ -72,6 +74,7 @@ class ExpStatus(enum.Enum):
     attack_failed = 2
     flag_submitting = 3
     success = 4
+    flag_error = 5
 
 
 class ExpLog(Base):

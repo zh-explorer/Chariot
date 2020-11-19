@@ -6,6 +6,7 @@ from functools import partial
 import re
 from ..util import Context, DictWrapper, log_reinit
 from .config_schema import schema as schema_data
+from .config_schema import exp_schema
 
 
 class Team:
@@ -46,6 +47,9 @@ class Challenge:
             self.ip_range = None
             self.ip_mask = None
             self.flag_path = "flag"
+
+        # we build exp dir for every challenge
+        os.makedirs(os.path.join(Context.exp_path, self.name), exist_ok=True)
 
 
 def extend_with_default(validator_class):
@@ -102,6 +106,7 @@ def load_conf(conf):
     # init log when get log config from config file
 
     Context.max_workers = conf.max_workers
+    Context.max_submitters = conf.max_submitters
 
     start_time = conf.start_time
     start_time_ary = time.strptime(start_time, "%Y/%m/%d %H:%M")
@@ -130,4 +135,13 @@ def load_conf_file(fp):
     conf = load_yaml(fp)
     conf = load_conf(conf)
     Context.conf = conf
+    return conf
+
+
+def load_exp_config(fp):
+    conf = load_yaml(fp)
+    top_schema = exp_schema
+    default_validating = extend_with_default(jsonschema.Draft4Validator)
+    top_validator = default_validating(top_schema, format_checker=jsonschema.FormatChecker())
+    top_validator.validate(conf)
     return conf

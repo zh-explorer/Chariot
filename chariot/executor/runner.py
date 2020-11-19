@@ -6,11 +6,20 @@ import traceback
 
 from ..util import Context
 import queue
-from ..db import ExpStatus, ExpLog, Flag, ChallengeInst, FlagStatus
+from ..db import ExpStatus, ExpLog, Flag, ChallengeInst
 
 
 def pool_init(max_workers=None):
+    if Context.exec_pool:
+        Context.exec_pool.shutdown(wait=False)
+        Context.exec_pool = None
     Context.exec_pool = concurrent.futures.ThreadPoolExecutor(max_workers)
+
+
+def pool_stop():
+    if Context.exec_pool:
+        Context.exec_pool.shutdown(wait=False)
+        Context.exec_pool = None
 
 
 def flag_search(data: bytes):
@@ -194,3 +203,4 @@ class ExpRunner(object):
         session.commit()
         session.close()
         self.notify_queue.put(self.log_id)
+        Context.notify_main_thread()
