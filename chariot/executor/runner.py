@@ -4,9 +4,10 @@ import time
 import os
 import traceback
 
+from ..core.time_watcher import round_range, current_round
 from ..util import Context
 import queue
-from ..db import ExpStatus, ExpLog, Flag, ChallengeInst
+from ..db import ExpStatus, ExpLog, Flag, ChallengeInst, FlagStatus
 
 
 def pool_init(max_workers=None):
@@ -46,14 +47,16 @@ class ExecResult(object):
 
 
 class ExpRunner(object):
-    def __init__(self, file_path: str, inst_id: int, notify_queue: queue.Queue, timeout=20):
+    def __init__(self, exp_name, file_path: str, inst_id: int, notify_queue: queue.Queue, scheduler, timeout=30):
         if Context.exec_pool is None:
             pool_init(Context.max_workers)
         self.file_path = file_path
         self.timeout = timeout
-        self.exp_name = os.path.basename(self.file_path)
+        self.exp_name = exp_name
         self.process_time = int(time.time())
         self.notify_queue = notify_queue
+        self.scheduler = scheduler
+        self.inst_id = inst_id
 
         session = Context.db.get_session()
         inst = session.query(ChallengeInst).filter(ChallengeInst.id == inst_id).one()
@@ -188,19 +191,33 @@ class ExpRunner(object):
         session = Context.db.get_session()
         r = session.query(ExpLog).filter(ExpLog.id == self.log_id).one()
         if flag:
-            f = Flag()
-            f.flag_data = flag
-            f.timestamp = int(time.time())
-            f.inst_id = r.inst_id
-            f.weight = r.inst.weight
-            session.add(f)
-            session.commit()
-            r.flag_id = f.id
-            r.status = ExpStatus.flag_submitting
+            start, end = round_range(current_round())
+            f = session.query(Flag).filter(Flag.flag_data == flag, Flag.timestamp >= start, Flag.timestamp <= end,
+                                           Flag.inst_id == self.inst_id).first()
+            if f and (f.submit_status == FlagStatus.submit_success or f.submit_status == FlagStatus.wait_submit):
+                # this is a duplicate flag
+                f.timestamp = int(time.time())
+                f.weight = min(r.inst.weight, f.weight)
+                session.commit()
+                r.flag_id = f.id
+                if f.submit_status == FlagStatus.wait_submit:
+                    r.status = ExpStatus.flag_submitting
+                elif f.submit_status == FlagStatus.submit_success:
+                    r.status = ExpStatus.success
+            else:
+                f = Flag()
+                f.flag_data = flag
+                f.timestamp = int(time.time())
+                f.inst_id = r.inst_id
+                f.weight = r.inst.weight
+                session.add(f)
+                session.commit()
+                r.flag_id = f.id
+                r.status = ExpStatus.flag_submitting
         else:
             r.status = ExpStatus.attack_failed
         r.log_path = log_path
         session.commit()
         session.close()
-        self.notify_queue.put(self.log_id)
+        self.notify_queue.put((self.log_id, self.scheduler, True if flag else False))
         Context.notify_main_thread()

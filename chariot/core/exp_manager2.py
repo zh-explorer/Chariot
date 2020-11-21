@@ -28,9 +28,11 @@ class ExpManager(object):
         self.challenge_name = challenge_name
         self.challenge_path = path.join(Context.exp_path, challenge_name)
 
-        self.exps = self.get_exps()
+        self.exps_o = self.get_exps()
+        self.exps = []
+        for i in self.exps_o:
+            self.exps.append([i, i.retry_time])
         self.exp_index = 0
-        self.retry = 0
 
     def get_exp_from_conf(self, exp_name):
         try:
@@ -91,7 +93,7 @@ class ExpManager(object):
         modify_exps = []
 
         old_exp_name = set()
-        for exp in self.exps:
+        for exp in self.exps_o:
             old_exp_name.add(exp.name)
 
         new_exp_name = set()
@@ -105,7 +107,7 @@ class ExpManager(object):
         remain_exp = new_exp_name.intersection(old_exp_name)
         for exp_name in remain_exp:
             exp = None
-            for e in self.exps:
+            for e in self.exps_o:
                 if e.name == exp_name:
                     exp = e
                     break
@@ -135,33 +137,34 @@ class ExpManager(object):
 
     def resort_exp(self, add_exps, del_exps, modify_exps):
         # first del exp from list
-        now_exps = self.exps[self.exp_index:]
-        if self.retry >= now_exps[0].retry_time:
-            now_exps.pop(0)
+        new_exps = []
+        for e in add_exps:
+            new_exps.append([e, e.retry_time])
+        for e in modify_exps:
+            new_exps.append([e, e.retry_time])
 
-        new_exps = add_exps + modify_exps
-        for e in now_exps:
-            if self.in_list(e, modify_exps):
-                continue
+        for e, times in self.exps:
             if e.name in del_exps:
                 continue
-            new_exps.append(e)
+            if self.in_list(e, modify_exps):
+                continue
+            new_exps.append([e, times])
         self.exps = new_exps
         self.exps.sort()
-        self.exp_index = 0
-        self.retry = 0
+        self.exps_o = []
+        for e, i in self.exps:
+            self.exps_o.append(e)
 
     def exp_iter(self) -> Exp:
-        if len(self.exps) <= self.exp_index:
+        if not self.exps:
             return None
-        exp = self.exps[self.exp_index]
-        if self.retry < exp.retry_time:
-            self.retry += 1
-            return exp
-        self.retry = 1
-        self.exp_index += 1
-        if len(self.exps) > self.exp_index:
-            return self.exps[self.exp_index]
+        if self.exp_index >= len(self.exps):
+            self.exp_index = 0
+        exp, retry = self.exps[self.exp_index]
+        retry -= 1
+        if retry == 0:
+            self.exps.pop(self.exp_index)
         else:
-            return None
-
+            self.exps[self.exp_index][1] = retry
+            self.exp_index += 1
+        return exp

@@ -47,6 +47,7 @@ class ChallengeInst(Base):
     port = sqlalchemy.Column(sqlalchemy.Integer)
 
 
+# TODO: need a status for retry submit
 class FlagStatus(enum.Enum):
     wait_submit = 0
     submit_success = 1
@@ -63,7 +64,7 @@ class Flag(Base):
     timestamp = sqlalchemy.Column(sqlalchemy.Integer)
     inst_id = sqlalchemy.Column(sqlalchemy.Integer,
                                 sqlalchemy.ForeignKey("challenge_inst.id", ondelete="SET NULL", onupdate="CASCADE"))
-    inst = sqlalchemy.orm.relationship("ChallengeInst", backref="flag")
+    inst = sqlalchemy.orm.relationship("ChallengeInst", backref="flags")
     weight = sqlalchemy.Column(sqlalchemy.Integer, default=100)
     submit_status = sqlalchemy.Column(sqlalchemy.Enum(FlagStatus), default=FlagStatus.wait_submit)
     comment = sqlalchemy.Column(sqlalchemy.String(256))

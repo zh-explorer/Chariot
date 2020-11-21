@@ -1,1 +1,1 @@
-from .main import testfunc
+from .main import server_start

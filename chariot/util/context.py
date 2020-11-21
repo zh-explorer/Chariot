@@ -24,6 +24,7 @@ class Context:
     watcher = None
     alarm = None
     cv = None
+    exploit_list = []
 
     @staticmethod
     def notify_main_thread():

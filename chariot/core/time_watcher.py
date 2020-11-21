@@ -12,7 +12,7 @@ def round_calc(now_time):
     now_time = int(now_time)
     round_time = Context.round_time
     start_time = Context.start_time
-    return int((start_time - now_time) / (round_time * 60))
+    return int((now_time - start_time) / (round_time * 60))
 
 
 def round_range(round_num):

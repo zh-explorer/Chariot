@@ -1,0 +1,39 @@
+database: 'mysql+pymysql://root:********@192.168.74.233/flag_submit'
+log_level: DEBUG
+log_path: /tmp/flag_log
+start_time: 2020/11/21 00:00
+round_time: 1
+flag_pattern: 'flag\{([a-fA-F\d]{32})\}'
+ip_range: 127.0.0.1
+ip_mask: 32
+exp_path: /tmp/exp
+teams:
+  - name: team1
+    ip: 192.168.74.1
+  - name: team2
+    ip: 192.168.74.1
+  - name: team3
+    ip: 192.168.74.1
+  - name: team4
+    ip: 192.168.74.1
+  - name: team5
+    ip: 192.168.74.1
+  - name: team6
+    ip: 192.168.74.1
+  - name: team7
+    ip: 192.168.74.1
+  - name: team8
+    ip: 192.168.74.1
+
+challenges:
+  - name: pwn1
+    port: 12345
+    flag_path: /tmp/flag
+  - name: pwn2
+    port: 3343
+    flag_path: /tmp/flag
+#addr_map:
+#  - ip: 1.1.1.1
+#    port: 1234
+#    team: team1
+#    challenge: pwn1

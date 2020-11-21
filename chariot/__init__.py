@@ -1,1 +1,1 @@
-from .core import testfunc
+from .core import server_start
